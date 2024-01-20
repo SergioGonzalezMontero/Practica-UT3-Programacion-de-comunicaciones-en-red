@@ -50,7 +50,6 @@ public class Player extends Thread {
                 String msg = reciboServ.readLine();
                 System.out.println(msg);
                 if ("ok".equalsIgnoreCase(msg)) {
-
                     ////////////////////////////////
                     /////////// PREGUNTAR SI HAY QUE INTRODUCIR UN NOMBRE O CON EL GETNAME DEL HILO VALE
                     ///////////////////////////////
