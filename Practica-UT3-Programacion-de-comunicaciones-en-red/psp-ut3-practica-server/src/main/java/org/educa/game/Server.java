@@ -13,8 +13,8 @@ import java.util.ArrayList;
  * Clase Server, recibe y controla todos los contactos de los jugadores para crear la partida
  */
 public class Server {
-    private final String DIRECCION = "localhost"; // Dirección del servidor
-    private final int PUERTO = 5555; // Puerto del servidor
+    public final String DIRECCION = "localhost"; // Dirección del servidor
+    public final int PUERTO = 5555; // Puerto del servidor
     private SalaEsperaJugadores salaEsperaJugadores=new SalaEsperaJugadores(); // Se crea el objeto de Sala de Espera
     private ArrayList <Partida> listaPartida = new ArrayList<>(); // Se crea una lista de partidas
 
@@ -24,29 +24,18 @@ public class Server {
             InetSocketAddress addr = new InetSocketAddress(DIRECCION,PUERTO);
             serverSocket.bind(addr);
             System.out.println("Se han aceptado las conexiones");
-            esperarJugadores(serverSocket);
+            while (true) {
+                Socket resolverPeticiones = serverSocket.accept();
+                System.out.println("Conexión recibida");
+                Invitacion invitacion = new Invitacion(resolverPeticiones, this);
+                Thread hilo = new Thread(invitacion);
+                hilo.start();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    /**
-     * Espera infinitamente la recepcion de jugadores
-     * @param serverSocket recibe el serverSocket
-     */
-
-    private void esperarJugadores(ServerSocket serverSocket){
-        while (true) {
-            try (Socket resolverPeticiones = serverSocket.accept()){
-                System.out.println("Conexión recibida");
-                Invitacion invitacion = new Invitacion(resolverPeticiones, this);
-                Thread hilo = new Thread(invitacion);
-                hilo.start();
-            }catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     /**
      * Consigue la sala de espera de los jugadores
@@ -76,17 +65,22 @@ public class Server {
             for (int i = 0; i < listaPartida.size()&&!hueco; i++) {
                 if(listaPartida.get(i).getJugador2()==null){
                     listaPartida.get(i).setJugador2(jugador);
+                    jugador.setEnPartida(true);
                 }
             }
-            if(!hueco){
+            if(!hueco&&!jugador.isEnPartida()){
                 Partida partida = new Partida();
                 partida.setJugador1(jugador);
+                jugador.setEnPartida(true);
                 getListaPartida().add(partida);
             }
         }else{
-            Partida partida = new Partida();
-            partida.setJugador1(jugador);
-            getListaPartida().add(partida);
+            if(!jugador.isEnPartida()) {
+                Partida partida = new Partida();
+                partida.setJugador1(jugador);
+                jugador.setEnPartida(true);
+                getListaPartida().add(partida);
+            }
         }
     }
 
@@ -129,12 +123,41 @@ public class Server {
      */
     public synchronized boolean comprobarPartidaLlena(Jugador jugador){
         for (Partida partida : listaPartida) {
-            if ((partida.getJugador1().getNombre().equalsIgnoreCase(jugador.getNombre()) && partida.getJugador2() != null) ||
-                    (partida.getJugador2().getNombre().equalsIgnoreCase(jugador.getNombre()) && partida.getJugador1() != null)) {
+            if ((jugador.getNombre().equalsIgnoreCase(partida.getJugador1().getNombre()) && partida.getJugador2() != null) ||
+                    (jugador.getNombre().equalsIgnoreCase(partida.getJugador2().getNombre()) && partida.getJugador1() != null)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public synchronized Partida creaccionDePartida(int idPartida){
+        for (Partida partida : listaPartida) {
+            if(partida.getId()== idPartida){
+                return partida;
+            }
+        }
+        return null;
+    }
+
+    public synchronized void acabarPartida(int idPartida, String resultado){
+        for (Partida partida:listaPartida) {
+            if(partida.getId()==idPartida){
+                if("V".equalsIgnoreCase(resultado)){
+                    partida.setGanador("Anfitrion");
+                }else{
+                    partida.setGanador("Invitado");
+                }
+            }
+        }
+    }
+
+    public synchronized void eliminarPartidas(int id){
+        for (int i = 0; i < listaPartida.size(); i++) {
+            if(listaPartida.get(i).getId()==id){
+                listaPartida.remove(i);
+            }
+        }
     }
 
 }

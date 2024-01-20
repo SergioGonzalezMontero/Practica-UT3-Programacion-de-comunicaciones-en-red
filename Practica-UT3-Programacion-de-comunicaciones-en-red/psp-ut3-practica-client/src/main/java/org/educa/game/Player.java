@@ -5,6 +5,8 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.SocketChannel;
+import java.sql.SQLOutput;
 import java.util.Random;
 
 public class Player extends Thread {
@@ -46,17 +48,20 @@ public class Player extends Thread {
                 envioServ.println("empiezo");
                 envioServ.flush();
                 String msg = reciboServ.readLine();
+                System.out.println(msg);
                 if ("ok".equalsIgnoreCase(msg)) {
+
                     ////////////////////////////////
                     /////////// PREGUNTAR SI HAY QUE INTRODUCIR UN NOMBRE O CON EL GETNAME DEL HILO VALE
                     ///////////////////////////////
                     if (checkNickName(getName())) {
-                        envioServ.println(gameType + "," + getName());
+                        System.out.println(gameType + "," + getName()+","+5555);
+                        envioServ.println(gameType + "," + getName()+","+5555);
                         envioServ.flush();
                         //Recibimos una String; nickNameOponente, host, puerto, anfitrion, idPartida
                         msg = reciboServ.readLine();
                         String[] datos = msg.split(",");
-                        System.out.println("Mi oponentes es: " + datos[0]);
+                        System.out.println("SOY "+getName()+" Mi oponentes es: " + datos[0]);
                         if ("anfitrion".equalsIgnoreCase(datos[3])) {
                             System.out.println("Eres anfitrion");
                             conexionAnfitrion(datos, envioServ);
@@ -82,12 +87,17 @@ public class Player extends Thread {
      */
     private void conexionInvitado(String[] datos) {
         try (Socket socketInvitado = new Socket()) {
-            while (!socketInvitado.isConnected()){
-                InetSocketAddress addrInv = new InetSocketAddress(datos[1],Integer.parseInt(datos[2]));
-                socketInvitado.connect(addrInv);
-            }
-            partidaInvitado(socketInvitado);
-        } catch (IOException e) {
+            boolean esperando = true;
+            /////////////////////
+            /////////////////////
+            //////// PREGUNTAR MANUEL FORMA DE HACER ESPERAR A LOS INVITADOS
+            ////////////////////
+            ////////////////////
+            Thread.sleep(1000);
+            InetSocketAddress addrInv = new InetSocketAddress(datos[1],Integer.parseInt(datos[2]));
+            socketInvitado.connect(addrInv);
+            partidaInvitado(socketInvitado, datos);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -96,7 +106,7 @@ public class Player extends Thread {
      * Método que realiza la interacción del invitado con el anfitrión cuando empieza la partida
      * @param socketInvitado
      */
-    private void partidaInvitado(Socket socketInvitado) {
+    private void partidaInvitado(Socket socketInvitado, String [] datos) {
         try(BufferedReader reciboSInv = new BufferedReader(new InputStreamReader(socketInvitado.getInputStream()));
             PrintWriter envioInv = new PrintWriter(new OutputStreamWriter(socketInvitado.getOutputStream()))){
             String resultado="";
@@ -106,11 +116,11 @@ public class Player extends Thread {
                 envioInv.flush();
                 resultado = reciboSInv.readLine();
                 if("V".equalsIgnoreCase(resultado)){
-                    System.out.println("He perdido");
+                    System.out.println("PARTIDA: "+datos[4]+" Invitado: He Perdido");
                 }else if("D".equalsIgnoreCase(resultado)){
-                    System.out.println("He ganado");
+                    System.out.println("PARTIDA: "+datos[4]+" Invitado: He ganado");
                 }else{
-                    System.out.println("Hemos empatado, tiramos de nuevo");
+                    System.out.println("PARTIDA: "+datos[4]+" Hemos empatado, tiramos de nuevo");
                 }
             }
             enPartida=false;
@@ -154,15 +164,17 @@ public class Player extends Thread {
                     if (tiradaAnf > tiradaInv) {
                         envioDePartidaAnf.println("V");
                         envioDePartidaAnf.flush();
-                        resultadoPartida = datos[4] + "V";
-                        envioServ.println(resultadoPartida);
+                        resultadoPartida = "V";
+                        envioServ.println(datos[4]+" "+resultadoPartida);
                         envioServ.flush();
+
                     } else if (tiradaAnf < tiradaInv) {
                         envioDePartidaAnf.println("D");
                         envioDePartidaAnf.flush();
-                        resultadoPartida = datos[4] + "D";
-                        envioServ.println(resultadoPartida);
+                        resultadoPartida = "D";
+                        envioServ.println(datos[4]+" "+resultadoPartida);
                         envioServ.flush();
+
                     } else {
                         envioDePartidaAnf.println("E");
                         envioDePartidaAnf.flush();

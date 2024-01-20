@@ -16,7 +16,7 @@ public class Invitacion implements Runnable{
         this.socket=socket;
         this.server=server;
     }
-    //Recibimos una String; nickNameOponente, host, puerto, anfitrion, idPartida
+
 
     /**
      * Metodo run para iniciar la invitación
@@ -25,35 +25,71 @@ public class Invitacion implements Runnable{
     public void run() {
         StringBuilder datos = new StringBuilder();
         try(
-            PrintWriter envioInfo = new PrintWriter(socket.getOutputStream());
+            PrintWriter envioInfo = new PrintWriter(new OutputStreamWriter(this.socket.getOutputStream()));
             BufferedReader reciboInfo= new BufferedReader(new InputStreamReader(socket.getInputStream()))){
-            Jugador jugador = new Jugador(reciboInfo.readLine(),
-                    reciboInfo.readLine(),
-                    Integer.parseInt(reciboInfo.readLine()));
+            String msg = reciboInfo.readLine();
+            if("empiezo".equalsIgnoreCase(msg)){
+                envioInfo.println("ok");
+                envioInfo.flush();
+            }
+            msg=reciboInfo.readLine();
+            System.out.println(msg);
+            String [] apuntes = msg.split(",");
+            Jugador jugador = new Jugador(apuntes[1],
+                    server.DIRECCION,
+                    Integer.parseInt(apuntes[2]));
             server.getSala().getListaJugadores().add(jugador);
             server.comprobarPartida(jugador);
-            /*datos.append(jugador.getNombre()).append(",").append("localhost").append(",").append(5555+server.obtenerIdPartida(jugador));
-            boolean anfitrion = server.comprobarNumJugador(jugador);
-            if(anfitrion){
-                datos.append(",").append("anfitrion").append(",").append(server.obtenerIdPartida(jugador));
-            }else{
-                datos.append(",").append("invitado");
-            }*/
-            
-            ///////////////////////////////////////////////
-            ///////////////////////////////////////////////
-            /////////////////TODO
-            ///////////////////////////////////////////////
-            ///////////////////////////////////////////////
-
-            while(!server.comprobarPartidaLlena(jugador)){
-
+            Partida partida = server.creaccionDePartida(server.obtenerIdPartida(jugador));
+            while(partida.getJugador1() ==null|| partida.getJugador2() ==null){
+                partida = server.creaccionDePartida(server.obtenerIdPartida(jugador));
             }
 
-        }catch (IOException e){
+            Jugador oponente;
+            if(partida.getJugador1().getNombre().equalsIgnoreCase(jugador.getNombre())){
+                oponente = partida.getJugador2();
+            }else{
+                oponente = partida.getJugador1();
+            }
+            //Recibimos una String; nickNameOponente, host, puerto, anfitrion, idPartida
+            datos.append(oponente.getNombre()).append(",").append(oponente.getDireccion()).append(",").append(5555+server.obtenerIdPartida(jugador)).append(",");
+
+            if(server.comprobarNumJugador(jugador)){
+                datos.append("anfitrion").append(",");
+            }else{
+                datos.append("invitado").append(",");
+            }
+            datos.append(server.obtenerIdPartida(jugador));
+            System.out.println(partida.toString());
+            envioInfo.println(datos.toString());
+            envioInfo.flush();
+            System.out.println("Servidor envia los datos");
+            Thread.sleep(3000);
+            msg=reciboInfo.readLine();
+
+            if(msg!=null){
+                int id = Integer.parseInt(msg.split(" ")[0]);
+                String resultado = msg.split(" ")[1];
+                server.acabarPartida(id,resultado);
+                System.out.println(partida);
+                server.eliminarPartidas(id);
+            }
+
+
+
+        }catch (Exception e){
             e.printStackTrace();
         }
     }
+    /////////////////////////////////////
+    /////////////////////////////////////
+    /////TODO   AÑADIR IF DE GAME TIPE
+    /////TODO   COMENTAR TODO
+    /////TODO   PREGUNTAR MECANISMO QUE EL CLIENTE ESPERA QUE EL SERVIDOR SE CONECTE
+    /////TODO   DEPURAR LOS SYSTEM OUT PRINT PARA QUE DEN LA INFORMACION BIEN BONITA
+    /////TODO   CAMBIAR SLEEP DE INVITACIONES POR "WHILE SMG = READER.READLINE)==NULL"
+    /////////////////////////////////////
+    /////////////////////////////////////
 
 
 

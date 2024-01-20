@@ -3,9 +3,9 @@ package org.educa.game;
 import java.util.ArrayList;
 
 public class Partida {
-    Jugador jugador1, jugador2; // Se crean dos objetos jugadores, que van a ser el numero de jugadores en este typeGame
-    String ganador; // Variable que determina si es ganador "V", perdedor "P", o ha habido un empate "E"
-    int id; // Identificador de la partida
+    private Jugador jugador1, jugador2; // Se crean dos objetos jugadores, que van a ser el numero de jugadores en este typeGame
+    private String ganador; // Variable que determina si es ganador "V", perdedor "P", o ha habido un empate "E"
+    private int id; // Identificador de la partida
     static int cont = 0; // Contador autoincrementable para el ID
 
     /**
@@ -69,5 +69,15 @@ public class Partida {
      */
     public void setGanador(String ganador) {
         this.ganador = ganador;
+    }
+
+    @Override
+    public String toString() {
+        return "Partida{" +
+                "jugador1=" + jugador1.getNombre() +
+                ", jugador2=" + jugador2.getNombre() +
+                ", ganador='" + ganador + '\'' +
+                ", id=" + id +
+                '}';
     }
 }
